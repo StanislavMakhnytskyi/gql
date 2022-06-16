@@ -1,6 +1,5 @@
 const graphql = require('graphql')
 const axios = require('axios');
-const { response } = require('express');
 const { GraphQLList, GraphQLNonNull } = require('graphql');
 
 const { GraphQLObjectType, GraphQLString, GraphQLInt, GraphQLSchema } = graphql
@@ -19,7 +18,7 @@ const CompanyType = new GraphQLObjectType({
     },
     users: {
       type: new GraphQLList(UserType),
-      resolve(parentValue, args) {
+      resolve(parentValue) {
         return axios.get(`http://localhost:3000/companies/${parentValue.id}/users`).then(response => response.data)
       },
     },
@@ -34,7 +33,7 @@ const UserType = new GraphQLObjectType({
     age: { type: GraphQLInt },
     company: {
       type: CompanyType,
-      resolve(parentValue, args) {
+      resolve(parentValue) {
         return axios.get(`http://localhost:3000/companies/${parentValue.companyId}`).then(response => response.data)
       },
     },
@@ -83,7 +82,21 @@ const mutation = new GraphQLObjectType({
         id: { type: new GraphQLNonNull(GraphQLString) },
       },
       resolve(parentValue, { id }) {
-        return axios.delete(`http://localhost:3000/users/${id}`).then(() => ({ id }))
+        return axios.delete(`http://localhost:3000/users/${id}`).then(response => response.data)
+      },
+    },
+    editUser: {
+      type: UserType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        firstName: {
+          type: GraphQLString,
+        },
+        age: { type: GraphQLInt },
+        companyId: { type: GraphQLString },
+      },
+      resolve(parentValue, args) {
+        return axios.patch(`http://localhost:3000/users/${args.id}`, args).then(response => response.data)
       },
     },
   },
